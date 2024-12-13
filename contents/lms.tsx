@@ -6,12 +6,14 @@ export const config: PlasmoCSConfig = {
   matches: ["https://acanthus.cis.kanazawa-u.ac.jp/base/lms-course/list"]
 }
 
-export const getInlineAnchor: PlasmoGetInlineAnchor = async () =>
-  document.getElementsByClassName("module-toggle-panel__body-inner")[1]
+const target = document.getElementsByClassName(
+  "module-toggle-panel__body-inner"
+)[1]! as HTMLElement
 
+export const getInlineAnchor: PlasmoGetInlineAnchor = async () => target
 export default () => {
-  const courseList = document
-    .getElementsByClassName("module-toggle-panel__body-inner")[1]
+  target.style.display = "none"
+  const courseList = target
     .getElementsByTagName("tbody")[0]
     .getElementsByTagName("tr")
   const courseInfoList = Array.from(courseList).map((course) => {
