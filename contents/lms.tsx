@@ -1,9 +1,22 @@
+import * as Tabs from "@radix-ui/react-tabs"
+import cssText from "data-text:@/style.css"
 import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
+import { useState } from "react"
 
+import Timetable from "./components/timetable"
+import TimetableCell from "./components/timetableCell"
+import TimetableColumn from "./components/timetableColumn"
 import type { course } from "./type"
+import toHalfWidth from "./util/toHalfWidth"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://acanthus.cis.kanazawa-u.ac.jp/base/lms-course/list"]
+}
+
+export const getStyle = () => {
+  const style = document.createElement("style")
+  style.textContent = cssText
+  return style
 }
 
 const target = document.getElementsByClassName(
@@ -12,7 +25,6 @@ const target = document.getElementsByClassName(
 
 export const getInlineAnchor: PlasmoGetInlineAnchor = async () => target
 export default () => {
-  target.style.display = "none"
   const courseList = target
     .getElementsByTagName("tbody")[0]
     .getElementsByTagName("tr")
@@ -39,7 +51,7 @@ export default () => {
           course.getElementsByClassName(
             "lms-course-list-teaching_list-week_time"
           )[0] as HTMLElement
-        ).innerText.replace(/(月|火|水|木|金|土|日)\/.*/, "$1")! as
+        ).innerText.replace(/.*(月|火|水|木|金|土|日)\/.*/, "$1")! as
           | "月"
           | "火"
           | "水"
@@ -48,11 +60,13 @@ export default () => {
           | "土"
           | "日",
         period: parseInt(
-          (
-            course.getElementsByClassName(
-              "lms-course-list-teaching_list-week_time"
-            )[0] as HTMLElement
-          ).innerText.replace(/.*\/(1|2|3|4|5|6|7)時限/, "$1")
+          toHalfWidth(
+            (
+              course.getElementsByClassName(
+                "lms-course-list-teaching_list-week_time"
+              )[0] as HTMLElement
+            ).innerText.replace(/.*\/([1-7１-７])時限/, "$1")
+          )
         )
       },
       courseNumber: (
@@ -89,16 +103,63 @@ export default () => {
     }
     return courseInfo
   })
-  console.log(courseInfoList)
+  target.style.display = "none"
+  const [isDisplayWeekend, setIsDisplayWeekend] = useState(false)
+  const uniqueYears = Array.from(
+    new Set(courseInfoList.map((course) => course.yearQuoter.year))
+  ).sort()
+  const uniqueQuoters = [1, 2, 3, 4]
   return (
-    <div>
-      <button
-        onClick={(e) => {
-          courseInfoList[0].onClick()
-          console.log("clicked", courseInfoList[0].onClick)
-        }}>
-        {courseInfoList[0].courseName}
-      </button>
-    </div>
+    <Tabs.Root
+      defaultValue={uniqueYears[0].toString()}
+      className="mb-6 flex w-full flex-col-reverse">
+      <Tabs.List className="ml-2">
+        {uniqueYears.map((year) => (
+          <Tabs.Trigger value={year.toString()} className="mr-2" key={year}>
+            {year}
+          </Tabs.Trigger>
+        ))}
+      </Tabs.List>
+      {uniqueYears.map((year) => (
+        <Tabs.Content value={year.toString()} key={year}>
+          <Tabs.Root
+            defaultValue={uniqueQuoters[0].toString()}
+            className="w-full">
+            <Tabs.List className="mb-2 ml-3">
+              {uniqueQuoters.map((quoter) => (
+                <Tabs.Trigger
+                  value={quoter.toString()}
+                  className="mr-2"
+                  key={quoter}>
+                  {quoter}Q
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+            {uniqueQuoters.map((quoter) => (
+              <Tabs.Content value={quoter.toString()} key={quoter}>
+                <Timetable
+                  data={courseInfoList.filter(
+                    (course) =>
+                      course.yearQuoter.year === year &&
+                      course.yearQuoter.quoter === quoter
+                  )}
+                  xArray={
+                    isDisplayWeekend
+                      ? ["月", "火", "水", "木", "金", "土", "日"]
+                      : ["月", "火", "水", "木", "金"]
+                  }
+                  yArray={[1, 2, 3, 4, 5, 6, 7]}
+                  xKey="datePeriod.date"
+                  yKey="datePeriod.period"
+                  RenderCell={TimetableCell}
+                  RenderColumn={TimetableColumn}
+                  className="flex w-full"
+                />
+              </Tabs.Content>
+            ))}
+          </Tabs.Root>
+        </Tabs.Content>
+      ))}
+    </Tabs.Root>
   )
 }

@@ -3,7 +3,7 @@ import React from "react"
 export type RenderCellProps<T> = {
   xFragment: any
   yFragment: any
-  dataFragment: T
+  dataFragment: T | undefined
 }
 export type RenderColumnProps = {
   xFragment: any
@@ -34,26 +34,25 @@ export default <T,>({
       {xArray.map((xFragment) => (
         <RenderColumn xFragment={xFragment} key={xFragment}>
           <>
-            {yArray.map((yFragment) =>
-              data
-                .filter((dataFragment) => {
-                  const xValue = xKey
-                    .split(".")
-                    .reduce((acc, key) => acc[key], dataFragment)
-                  const yValue = yKey
-                    .split(".")
-                    .reduce((acc, key) => acc[key], dataFragment)
-                  return xValue === xFragment && yValue === yFragment
-                })
-                .map((dataFragment) => (
-                  <RenderCell
-                    xFragment={xFragment}
-                    yFragment={yFragment}
-                    dataFragment={dataFragment}
-                    key={yFragment}
-                  />
-                ))
-            )}
+            {yArray.map((yFragment) => {
+              const course = data.filter((dataFragment) => {
+                const xValue = xKey
+                  .split(".")
+                  .reduce((acc, key) => acc[key], dataFragment)
+                const yValue = yKey
+                  .split(".")
+                  .reduce((acc, key) => acc[key], dataFragment)
+                return xValue === xFragment && yValue === yFragment
+              })
+              return (
+                <RenderCell
+                  xFragment={xFragment}
+                  yFragment={yFragment}
+                  dataFragment={course[0]}
+                  key={yFragment}
+                />
+              )
+            })}
           </>
         </RenderColumn>
       ))}
