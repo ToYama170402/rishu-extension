@@ -33,7 +33,6 @@ export default <T,>({
     <div className={className}>
       {xArray.map((xFragment) => (
         <RenderColumn xFragment={xFragment} key={xFragment}>
-          children: (
           <>
             {yArray.map((yFragment) =>
               data
@@ -56,7 +55,6 @@ export default <T,>({
                 ))
             )}
           </>
-          )
         </RenderColumn>
       ))}
     </div>
