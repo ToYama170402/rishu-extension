@@ -2,7 +2,10 @@
 module.exports = {
   content: ["./**/*.tsx"],
   theme: {
-    extend: {}
+    extend: {},
+    colors: {
+      acanthus: "#088ab4"
+    }
   },
   mode: "jit",
   darkMode: "class",
