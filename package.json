@@ -6,6 +6,7 @@
   "author": "ToYama",
   "scripts": {
     "dev": "plasmo dev",
+    "format": "prettier . --write",
     "build": "plasmo build",
     "package": "plasmo package"
   },
@@ -20,7 +21,11 @@
     "@types/node": "20.11.5",
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
     "prettier": "3.2.4",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "tailwindcss": "^3.4.16",
     "typescript": "5.3.3"
   },
   "manifest": {
