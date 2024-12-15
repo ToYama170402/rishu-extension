@@ -110,62 +110,75 @@ export default () => {
     new Set(courseInfoList.map((course) => course.yearQuoter.year))
   ).sort()
   const uniqueQuoters = [1, 2, 3, 4]
+  const isEveningPeriod = courseInfoList.some(
+    (course) => course.datePeriod.period > 5
+  )
   return (
-    <Tabs.Root
-      defaultValue={uniqueYears[0].toString()}
-      className="m-6 flex w-full flex-col-reverse">
-      <Tabs.List className="ml-2">
+    <div className="bg-white-dark w-full p-7">
+      <Tabs.Root
+        defaultValue={uniqueYears[0].toString()}
+        className="flex w-full flex-col-reverse">
+        <Tabs.List className="ml-5 flex leading-none">
+          {uniqueYears.map((year) => (
+            <Tabs.Trigger
+              value={year.toString()}
+              className="radix-state-active:bg-white radix-state-active:border-t-acanthus bg-white-dark mr-2 mt-1 block rounded border-solid p-1 leading-none shadow-lg"
+              key={year}>
+              {year}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
         {uniqueYears.map((year) => (
-          <Tabs.Trigger value={year.toString()} className="mr-2" key={year}>
-            {year}
-          </Tabs.Trigger>
-        ))}
-      </Tabs.List>
-      {uniqueYears.map((year) => (
-        <Tabs.Content value={year.toString()} key={year}>
-          <Tabs.Root
-            defaultValue={uniqueQuoters[0].toString()}
-            className="w-full">
-            <Tabs.List className="mb-2 ml-3">
+          <Tabs.Content
+            value={year.toString()}
+            key={year}
+            className="bg-white p-3 shadow-lg">
+            <Tabs.Root
+              defaultValue={uniqueQuoters[0].toString()}
+              className="w-full">
+              <Tabs.List className="ml-3 flex">
+                {uniqueQuoters.map((quoter) => (
+                  <Tabs.Trigger
+                    value={quoter.toString()}
+                    className="radix-state-active:border-b-2 radix-state-active:border-acanthus mr-2 block leading-none transition hover:border-b-2 hover:border-acanthus"
+                    key={quoter}>
+                    {quoter}Q
+                  </Tabs.Trigger>
+                ))}
+                <button
+                  className="text-white mb-2 ml-auto mr-0 block rounded bg-acanthus p-1 px-3 text-xs font-bold transition hover:bg-opacity-60"
+                  onClick={() => setIsDisplayWeekend(!isDisplayWeekend)}>
+                  {isDisplayWeekend ? "土日非表示" : "土日表示"}
+                </button>
+              </Tabs.List>
               {uniqueQuoters.map((quoter) => (
-                <Tabs.Trigger
-                  value={quoter.toString()}
-                  className="mr-2"
-                  key={quoter}>
-                  {quoter}Q
-                </Tabs.Trigger>
+                <Tabs.Content value={quoter.toString()} key={quoter}>
+                  <Timetable
+                    data={courseInfoList.filter(
+                      (course) =>
+                        course.yearQuoter.year === year &&
+                        course.yearQuoter.quoter === quoter
+                    )}
+                    xArray={
+                      isDisplayWeekend
+                        ? ["月", "火", "水", "木", "金", "土", "日"]
+                        : ["月", "火", "水", "木", "金"]
+                    }
+                    yArray={
+                      isEveningPeriod ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5]
+                    }
+                    xKey="datePeriod.date"
+                    yKey="datePeriod.period"
+                    RenderCell={TimetableCell}
+                    RenderColumn={TimetableColumn}
+                    className="flex w-full"
+                  />
+                </Tabs.Content>
               ))}
-              <button
-                className="text-white rounded bg-acanthus p-1 font-bold hover:bg-opacity-60"
-                onClick={() => setIsDisplayWeekend(!isDisplayWeekend)}>
-                {isDisplayWeekend ? "土日非表示" : "土日表示"}
-              </button>
-            </Tabs.List>
-            {uniqueQuoters.map((quoter) => (
-              <Tabs.Content value={quoter.toString()} key={quoter}>
-                <Timetable
-                  data={courseInfoList.filter(
-                    (course) =>
-                      course.yearQuoter.year === year &&
-                      course.yearQuoter.quoter === quoter
-                  )}
-                  xArray={
-                    isDisplayWeekend
-                      ? ["月", "火", "水", "木", "金", "土", "日"]
-                      : ["月", "火", "水", "木", "金"]
-                  }
-                  yArray={[1, 2, 3, 4, 5, 6, 7]}
-                  xKey="datePeriod.date"
-                  yKey="datePeriod.period"
-                  RenderCell={TimetableCell}
-                  RenderColumn={TimetableColumn}
-                  className="flex w-full"
-                />
-              </Tabs.Content>
-            ))}
-          </Tabs.Root>
-        </Tabs.Content>
-      ))}
-    </Tabs.Root>
+            </Tabs.Root>
+          </Tabs.Content>
+        ))}
+      </Tabs.Root>
+    </div>
   )
 }
