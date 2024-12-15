@@ -12,5 +12,5 @@ module.exports = {
   },
   mode: "jit",
   darkMode: "class",
-  plugins: ["autoprefixer"]
+  plugins: []
 }
