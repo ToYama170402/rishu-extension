@@ -135,6 +135,11 @@ export default () => {
                   {quoter}Q
                 </Tabs.Trigger>
               ))}
+              <button
+                className="text-white rounded bg-acanthus p-1 font-bold hover:bg-opacity-60"
+                onClick={() => setIsDisplayWeekend(!isDisplayWeekend)}>
+                {isDisplayWeekend ? "土日非表示" : "土日表示"}
+              </button>
             </Tabs.List>
             {uniqueQuoters.map((quoter) => (
               <Tabs.Content value={quoter.toString()} key={quoter}>
