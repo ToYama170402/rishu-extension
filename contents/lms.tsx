@@ -113,7 +113,7 @@ export default () => {
   return (
     <Tabs.Root
       defaultValue={uniqueYears[0].toString()}
-      className="mb-6 flex w-full flex-col-reverse">
+      className="m-6 flex w-full flex-col-reverse">
       <Tabs.List className="ml-2">
         {uniqueYears.map((year) => (
           <Tabs.Trigger value={year.toString()} className="mr-2" key={year}>
