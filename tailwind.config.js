@@ -4,10 +4,13 @@ module.exports = {
   theme: {
     extend: {},
     colors: {
-      acanthus: "#088ab4"
+      acanthus: {
+        bright: "#088ab4",
+        DEFAULT: "#003e5f"
+      }
     }
   },
   mode: "jit",
   darkMode: "class",
-  plugins: []
+  plugins: ["autoprefixer"]
 }
