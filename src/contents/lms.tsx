@@ -135,14 +135,23 @@ export default () => {
             key={year}
             className="bg-white p-3 shadow-lg">
             <Tabs.Root
-              defaultValue={uniqueQuoters[0].toString()}
-              className="w-full">
-              <Tabs.List className="ml-3 flex">
+              className="w-full"
+              defaultValue={
+                localStorage.getItem("lastActiveQuoter") ??
+                uniqueQuoters.at(-1).toString()
+              }>
+              <Tabs.List className="mb-2 ml-3 flex">
                 {uniqueQuoters.map((quoter) => (
                   <Tabs.Trigger
                     value={quoter.toString()}
                     className="radix-state-active:border-b-2 radix-state-active:border-acanthus mr-2 block leading-none transition hover:border-b-2 hover:border-acanthus"
-                    key={quoter}>
+                    key={quoter}
+                    onClick={() =>
+                      localStorage.setItem(
+                        "lastActiveQuoter",
+                        quoter.toString()
+                      )
+                    }>
                     {quoter}Q
                   </Tabs.Trigger>
                 ))}
