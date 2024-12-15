@@ -122,8 +122,9 @@ export default () => {
           {uniqueYears.map((year) => (
             <Tabs.Trigger
               value={year.toString()}
-              className="radix-state-active:bg-white radix-state-active:border-t-acanthus bg-white-dark mr-2 mt-1 block rounded border-solid p-1 leading-none shadow-lg"
-              key={year}>
+              className="radix-state-active:bg-white radix-state-active:border-t-acanthus bg-white-dark radix-state-active:shadow-lg mr-2 mt-1 block rounded border-solid p-1 leading-none"
+              key={year}
+              defaultValue={uniqueYears.at(-1).toString()}>
               {year}
             </Tabs.Trigger>
           ))}
