@@ -19,12 +19,14 @@ export const getStyle = () => {
   return style
 }
 
-const target = document.getElementsByClassName(
-  "module-toggle-panel__body-inner"
-)[1]! as HTMLElement
-
-export const getInlineAnchor: PlasmoGetInlineAnchor = async () => target
+export const getInlineAnchor: PlasmoGetInlineAnchor = async () => ({
+  element: document.getElementById("test")!,
+  insertPosition: "beforebegin"
+})
 export default () => {
+  const target = document.getElementsByClassName(
+    "module-toggle-panel__body-inner"
+  )[1]! as HTMLElement
   const courseList = target
     .getElementsByTagName("tbody")[0]
     .getElementsByTagName("tr")
@@ -103,7 +105,6 @@ export default () => {
     }
     return courseInfo
   })
-  target.style.display = "none"
   const [isDisplayWeekend, setIsDisplayWeekend] = useState(false)
   const uniqueYears = Array.from(
     new Set(courseInfoList.map((course) => course.yearQuoter.year))
