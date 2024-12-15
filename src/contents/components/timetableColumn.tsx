@@ -5,7 +5,6 @@ import { type RenderColumnProps } from "./timetable"
 export default ({ xFragment, children }: RenderColumnProps) => {
   const isDay =
     utcDayToJa(new Date().getDay()! as 0 | 1 | 2 | 3 | 4 | 5 | 6) === xFragment
-  console.log(isDay)
 
   return (
     <div
