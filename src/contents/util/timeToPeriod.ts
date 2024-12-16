@@ -1,21 +1,27 @@
 export default (time: Date): number => {
-  const hour = time.getHours()
-  const minute = time.getMinutes()
+  const day = new Date(time)
   // カードタッチ端末を基準
   switch (true) {
-    case hour >= 8 && minute >= 0 && hour <= 10 && minute < 20:
+    case time >= new Date(day.setHours(8, 0, 0)) &&
+      time <= new Date(day.setHours(10, 19, 0)):
       return 1
-    case hour >= 10 && minute >= 20 && hour <= 12 && minute < 5:
+    case time >= new Date(day.setHours(10, 20, 0)) &&
+      time <= new Date(day.setHours(12, 4, 0)):
       return 2
-    case hour >= 12 && minute >= 5 && hour <= 14 && minute < 35:
+    case time >= new Date(day.setHours(12, 5, 0)) &&
+      time <= new Date(day.setHours(14, 34, 0)):
       return 3
-    case hour >= 14 && minute >= 35 && hour <= 16 && minute < 20:
+    case time >= new Date(day.setHours(14, 35, 0)) &&
+      time <= new Date(day.setHours(16, 19, 0)):
       return 4
-    case hour >= 16 && minute >= 20 && hour <= 18 && minute < 5:
+    case time >= new Date(day.setHours(16, 20, 0)) &&
+      time <= new Date(day.setHours(18, 4, 0)):
       return 5
-    case hour >= 18 && minute >= 5 && hour <= 19 && minute < 50:
+    case time >= new Date(day.setHours(18, 5, 0)) &&
+      time <= new Date(day.setHours(19, 49, 0)):
       return 6
-    case hour >= 19 && minute >= 50 && hour <= 21 && minute < 20:
+    case time >= new Date(day.setHours(19, 50, 0)) &&
+      time <= new Date(day.setHours(21, 19, 0)):
       return 7
     default:
       return 0
