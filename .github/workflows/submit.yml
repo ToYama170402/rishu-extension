@@ -23,12 +23,50 @@ jobs:
         with:
           node-version: 16.x
           cache: "pnpm"
-      - name: Build the extension
+      - name: Build the extension (Chrome)
         run: pnpm build
-      - name: Package the extension into a zip artifact
+      - name: Build the extension (Firefox)
+        run: pnpm build --target=firefox
+      - name: Package the extension into a zip artifact (Chrome)
         run: pnpm package
-      - name: Browser Platform Publish
-        uses: PlasmoHQ/bpp@v3
+      - name: Package the extension into a zip artifact (Firefox)
+        run: pnpm package --target=firefox
+      # - name: Browser Platform Publish
+      #   uses: PlasmoHQ/bpp@v3
+      #   with:
+      #     keys: ${{ secrets.SUBMIT_KEYS }}
+      #     artifact: build/chrome-mv3-prod.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          keys: ${{ secrets.SUBMIT_KEYS }}
-          artifact: build/chrome-mv3-prod.zip
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset (Chrome)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/chrome-mv3-prod.zip
+          asset_name: chrome-mv3-prod.zip
+          asset_content_type: application/zip
+      - name: Upload Release Asset (Firefox)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/firefox-mv3-prod.zip
+          asset_name: firefox-mv3-prod.zip
+          asset_content_type: application/zip
