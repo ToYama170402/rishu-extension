@@ -16,10 +16,10 @@ jobs:
             ${{ runner.os }}-
       - name: Install pnpm
         run: npm install -g pnpm
-      - name: Use Node.js 16.x
+      - name: Use Node.js 22.12
         uses: actions/setup-node@v3.4.1
         with:
-          node-version: 16.x
+          node-version: 22.12
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
