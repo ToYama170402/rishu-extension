@@ -75,8 +75,13 @@ export default () => {
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "GET_CALENDAR_LIST" }, (res) => {
       if (res && res.success && res.items) {
-        setCalendarList(res.items)
-        if (res.items.length > 0) setCalendarId(res.items[0].id)
+        // 書き込み権限のあるカレンダーだけにフィルター
+        const writable = res.items.filter(
+          (cal: any) =>
+            cal.accessRole === "writer" || cal.accessRole === "owner"
+        )
+        setCalendarList(writable)
+        if (writable.length > 0) setCalendarId(writable[0].id)
       }
     })
   }, [])
