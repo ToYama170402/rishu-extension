@@ -7,6 +7,7 @@
       "~*": ["./src/*"],
       "@*": ["./src/*"]
     },
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "jsx": "react-jsx"
   }
 }
