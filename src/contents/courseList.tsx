@@ -188,7 +188,7 @@ export default () => {
                 value={calendarId}
                 onChange={(e) => setCalendarId(e.target.value)}>
                 <option value="">選択してください</option>
-                {calendarList.reverse().map((cal: any) => (
+                {[...calendarList].reverse().map((cal: any) => (
                   <option key={cal.id} value={cal.id}>
                     {cal.summary}
                   </option>
