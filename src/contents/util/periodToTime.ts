@@ -37,5 +37,12 @@ export default (period: number): { startTime: Date; endTime: Date } => {
         startTime: new Date(day.setHours(20, 0, 0)),
         endTime: new Date(day.setHours(21, 15, 0))
       }
+    case 8:
+      return {
+        startTime: new Date(day.setHours(21, 30, 0)),
+        endTime: new Date(day.setHours(22, 45, 0))
+      }
+    default:
+      throw new Error("Invalid period number")
   }
 }
