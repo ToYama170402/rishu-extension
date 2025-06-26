@@ -84,13 +84,13 @@ async function getCalendarList() {
 
 async function createCalendarEvent({
   summary,
-  description,
+  description = "",
   startDateTime,
   endDateTime,
   timeZone = "Asia/Tokyo",
-  recurrence,
+  recurrence = "",
   calendarId = "primary",
-  location
+  location = ""
 }) {
   const accessToken = await getValidAccessToken()
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`
