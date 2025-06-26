@@ -89,7 +89,8 @@ async function createCalendarEvent({
   endDateTime,
   timeZone = "Asia/Tokyo",
   recurrence,
-  calendarId = "primary"
+  calendarId = "primary",
+  location
 }) {
   const accessToken = await getValidAccessToken()
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`
@@ -104,7 +105,8 @@ async function createCalendarEvent({
       dateTime: endDateTime,
       timeZone
     },
-    ...(recurrence ? { recurrence } : {})
+    ...(recurrence ? { recurrence } : {}),
+    ...(location ? { location } : {})
   }
   const response = await fetch(url, {
     method: "POST",
