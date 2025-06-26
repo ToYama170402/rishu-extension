@@ -264,17 +264,17 @@ export default function CourseList() {
     <div className="w-full">
       {/* 追加完了アラートダイアログ */}
       <AlertDialogRoot open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogOverlay className="fixed inset-0 bg-black/30" />
-        <AlertDialogContent className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-6 shadow-lg focus:outline-none">
-          <AlertDialogTitle className="m-0 text-lg font-medium text-slate-900">
+        <AlertDialogOverlay className="fixed inset-0 bg-black/20" />
+        <AlertDialogContent className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-none border border-gray-400 bg-gray-100 p-4 font-sans shadow-none">
+          <AlertDialogTitle className="m-0 border-b border-gray-400 pb-1 font-bold text-gray-800">
             追加が完了しました
           </AlertDialogTitle>
-          <AlertDialogDescription className="mb-5 mt-4 text-base leading-normal text-slate-700">
+          <AlertDialogDescription className="mb-4 mt-2 text-gray-700">
             全ての授業がGoogleカレンダーに追加されました。
           </AlertDialogDescription>
           <div className="flex justify-end">
             <AlertDialogAction asChild>
-              <button className="inline-flex h-[35px] select-none items-center justify-center rounded bg-blue-100 px-4 font-medium text-blue-700 outline-none outline-offset-1 hover:bg-blue-200 focus-visible:outline-2 focus-visible:outline-blue-400">
+              <button className="rounded-none border border-gray-400 bg-gray-200 px-3 py-1 text-gray-800 shadow-none hover:bg-gray-300 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">
                 閉じる
               </button>
             </AlertDialogAction>
@@ -291,20 +291,20 @@ export default function CourseList() {
           </button>
         </Dialog.Trigger>
         <Dialog.Overlay className="fixed inset-0 bg-black/30" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 flex w-80 -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded bg-white p-6 shadow-lg">
-          <Dialog.Title className="mb-2 text-lg font-bold">
+        <Dialog.Content className="fixed left-1/2 top-1/2 flex w-96 max-w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-none border border-gray-400 bg-gray-100 p-4 font-sans shadow-none">
+          <Dialog.Title className="mb-1 border-b border-gray-400 pb-1 font-bold text-gray-800">
             カレンダーに追加
           </Dialog.Title>
-          <Dialog.Description className="mb-4 text-sm text-slate-600">
+          <Dialog.Description className="mb-2 text-gray-700">
             登録されている全ての授業をGoogleカレンダーに追加します。
             <br />
             この操作は元に戻せません。
           </Dialog.Description>
-          <div className="mb-2 flex flex-col gap-2">
-            <label className="text-xs text-slate-700">
+          <div className="mb-1 flex flex-col gap-1">
+            <label className="text-gray-800">
               カレンダー:
               <select
-                className="ml-2 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70"
+                className="ml-2 rounded-none border border-gray-400 bg-white px-1 py-0.5 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 value={calendarId}
                 onChange={(e) => setCalendarId(e.target.value)}
                 disabled={isLoading}>
@@ -316,11 +316,11 @@ export default function CourseList() {
                 ))}
               </select>
             </label>
-            <label className="text-xs text-slate-700">
+            <label className="text-gray-800">
               繰り返し開始日:
               <input
                 type="date"
-                className="ml-2 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70"
+                className="ml-2 rounded-none border border-gray-400 bg-white px-1 py-0.5 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 value={repeatStart}
                 onChange={(e) => {
                   setRepeatStart(e.target.value)
@@ -333,11 +333,11 @@ export default function CourseList() {
                 disabled={isLoading}
               />
             </label>
-            <label className="text-xs text-slate-700">
+            <label className="text-gray-800">
               繰り返し終了日:
               <input
                 type="date"
-                className="ml-2 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70"
+                className="ml-2 rounded-none border border-gray-400 bg-white px-1 py-0.5 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 value={repeatEnd}
                 onChange={(e) => {
                   setRepeatEnd(e.target.value)
@@ -350,35 +350,29 @@ export default function CourseList() {
                 disabled={isLoading}
               />
             </label>
-            {error && <div className="text-xs text-red-600">{error}</div>}
+            {error && <div className="mt-1 text-red-600">{error}</div>}
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2">
             <Dialog.Close asChild>
               <button
-                className="rounded border border-slate-300 bg-slate-50 px-3 py-1 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-70"
+                className="rounded-none border border-gray-400 bg-gray-200 px-3 py-1 text-gray-800 shadow-none hover:bg-gray-300 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 disabled={isLoading}>
                 キャンセル
               </button>
             </Dialog.Close>
             <button
-              className="rounded bg-blue-600 px-3 py-1 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-200 disabled:opacity-70"
+              className="rounded-none border border-gray-400 bg-gray-300 px-3 py-1 text-gray-900 shadow-none hover:bg-gray-400 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
               onClick={fetchAndCreateEvents}
-              disabled={
-                isLoading ||
-                !calendarId ||
-                !repeatStart ||
-                !repeatEnd ||
-                error !== null
-              }>
+              disabled={isLoading}>
               追加する
             </button>
           </div>
           <Progress.Root
-            className="relative mt-2 h-3 w-full overflow-hidden rounded-full bg-slate-200"
+            className="relative mt-2 h-2 w-full overflow-hidden rounded-none border border-gray-400 bg-gray-200"
             style={{ transform: "translateZ(0)" }}
             value={progress}>
             <Progress.Indicator
-              className="h-full bg-blue-600 transition-transform duration-500"
+              className="h-full bg-blue-400 transition-transform duration-500"
               style={{ transform: `translateX(-${100 - progress}%)` }}
             />
           </Progress.Root>
