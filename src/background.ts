@@ -3,18 +3,51 @@
 let oauth2AccessToken = null
 let oauth2TokenExpiry = null
 
+const CLIENT_ID = process.env.PLASMO_PUBLIC_OAUTH_CLIENT_ID || ""
+if (!CLIENT_ID) {
+  throw new Error(
+    "OAuth Client ID is not set. Please check your environment variables."
+  )
+}
+const SCOPE = "https://www.googleapis.com/auth/calendar"
+const REDIRECT_URI = `https://${chrome.runtime.id}.chromiumapp.org/`
+
 async function authenticateAndGetToken() {
   return new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive: true }, function (token) {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError.message)
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&response_type=token` +
+      `&scope=${encodeURIComponent(SCOPE)}` +
+      `&prompt=consent`
+    chrome.identity.launchWebAuthFlow(
+      {
+        url: authUrl,
+        interactive: true
+      },
+      (redirectUrl) => {
+        if (chrome.runtime.lastError || !redirectUrl) {
+          return reject(
+            chrome.runtime.lastError?.message || "認証に失敗しました"
+          )
+        }
+        // アクセストークンと有効期限をURLから抽出
+        const m = redirectUrl.match(/[#&]access_token=([^&]*)/)
+        const e = redirectUrl.match(/[#&]expires_in=([^&]*)/)
+        if (m && m[1]) {
+          oauth2AccessToken = m[1]
+          if (e && e[1]) {
+            oauth2TokenExpiry = Date.now() + parseInt(e[1], 10) * 1000
+          } else {
+            oauth2TokenExpiry = null
+          }
+          resolve(oauth2AccessToken)
+        } else {
+          reject("アクセストークンが取得できませんでした")
+        }
       }
-      if (!token) {
-        return reject("No access token found.")
-      }
-      oauth2AccessToken = token
-      resolve(token)
-    })
+    )
   })
 }
 
