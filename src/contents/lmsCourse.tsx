@@ -59,28 +59,29 @@ export default function LMSCourseAssignments() {
       const expireElement = e.querySelector(".cm-contentsList_contentDetailListItemData")
       
       let expireData = null
-      if (expireElement) {
+      if (expireElement && expireElement.textContent) {
         try {
-          const [startStr, endStr] = expireElement.textContent.split("-").map(str => str.trim())
-          const [startYear, startMonth, startDay, startHour, startMinute] = startStr.split(/[\/ :]/)
-          const [endYear, endMonth, endDay, endHour, endMinute] = endStr.split(/[\/ :]/)
-          
-          const startDateTime = new Date(
-            parseInt(startYear),
-            parseInt(startMonth) - 1,
-            parseInt(startDay),
-            parseInt(startHour),
-            parseInt(startMinute)
-          )
-          const endDateTime = new Date(
-            parseInt(endYear),
-            parseInt(endMonth) - 1,
-            parseInt(endDay),
-            parseInt(endHour),
-            parseInt(endMinute)
-          )
-          
-          expireData = { start: startDateTime, end: endDateTime }
+          const expireText = expireElement.textContent.trim()
+          if (expireText.includes("-")) {
+            const [startStr, endStr] = expireText.split("-").map(str => str.trim())
+            
+            // Parse using the format from the issue: YYYY/MM/DD HH:MM
+            const parseDateTime = (dateStr: string) => {
+              const [startYear, startMonth, startDay, startHour, startMinute] = dateStr.split(/[\/ :]/)
+              return new Date(
+                parseInt(startYear),
+                parseInt(startMonth) - 1,
+                parseInt(startDay),
+                parseInt(startHour) || 0,
+                parseInt(startMinute) || 0
+              )
+            }
+            
+            const startDateTime = parseDateTime(startStr)
+            const endDateTime = parseDateTime(endStr)
+            
+            expireData = { start: startDateTime, end: endDateTime }
+          }
         } catch (err) {
           console.warn("Failed to parse date:", expireElement.textContent, err)
         }
@@ -88,8 +89,11 @@ export default function LMSCourseAssignments() {
 
       // Check if assignment is submitted (this is a simple heuristic, might need adjustment)
       const isSubmitted = e.querySelector(".label-success") !== null ||
-                         e.textContent.includes("提出済み") ||
-                         e.textContent.includes("完了")
+                         e.querySelector(".badge-success") !== null ||
+                         e.textContent?.includes("提出済み") ||
+                         e.textContent?.includes("完了") ||
+                         e.textContent?.includes("submitted") ||
+                         false
 
       return {
         title: titleElement?.textContent?.trim() || "無題の課題",
@@ -101,7 +105,10 @@ export default function LMSCourseAssignments() {
     }).filter(assignment => 
       assignment.title && 
       assignment.type &&
-      (assignment.type.includes("レポート") || assignment.type.includes("課題"))
+      (assignment.type.includes("レポート") || 
+       assignment.type.includes("課題") ||
+       assignment.type.includes("Report") ||
+       assignment.type.includes("Assignment"))
     )
   }, [])
 
@@ -153,10 +160,24 @@ export default function LMSCourseAssignments() {
     try {
       await createTask(assignment)
       // Visual feedback - add a checkmark to the assignment
-      const button = assignment.element.querySelector(".task-add-btn")
+      const button = assignment.element.querySelector(".task-add-btn") as HTMLButtonElement
       if (button) {
         button.textContent = "✓ 追加済み"
-        button.setAttribute("disabled", "true")
+        button.disabled = true
+        button.className = "task-add-btn btn btn-sm btn-success"
+      }
+      
+      // Show success message
+      const successMsg = document.createElement("span")
+      successMsg.textContent = " ✓ タスクに追加されました"
+      successMsg.className = "text-success"
+      successMsg.style.fontSize = "12px"
+      successMsg.style.marginLeft = "10px"
+      
+      const titleContainer = assignment.element.querySelector(".cm-contentsList_contentName")
+      if (titleContainer && !titleContainer.querySelector(".success-msg")) {
+        successMsg.className += " success-msg"
+        titleContainer.appendChild(successMsg)
       }
     } catch (err) {
       console.error("Failed to create task:", err)
@@ -183,13 +204,25 @@ export default function LMSCourseAssignments() {
         return
       }
 
+      let successCount = 0
       for (let i = 0; i < unsubmittedReports.length; i++) {
-        await createTask(unsubmittedReports[i])
-        setProgress(Math.round(((i + 1) / unsubmittedReports.length) * 100))
+        try {
+          await createTask(unsubmittedReports[i])
+          successCount++
+          setProgress(Math.round(((i + 1) / unsubmittedReports.length) * 100))
+        } catch (err) {
+          console.error(`Failed to create task for ${unsubmittedReports[i].title}:`, err)
+          // Continue with other tasks even if one fails
+        }
       }
 
       setIsDialogOpen(false)
-      alert(`${unsubmittedReports.length}件のレポート課題をGoogleタスクに追加しました。`)
+      
+      if (successCount === unsubmittedReports.length) {
+        alert(`${successCount}件のレポート課題をGoogleタスクに追加しました。`)
+      } else {
+        alert(`${unsubmittedReports.length}件中${successCount}件のレポート課題をGoogleタスクに追加しました。`)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -201,16 +234,24 @@ export default function LMSCourseAssignments() {
   // Add individual task buttons to each assignment
   useEffect(() => {
     assignments.forEach((assignment) => {
-      if (assignment.element.querySelector(".task-add-btn")) return // Already has button
+      // Skip if button already exists or assignment is already submitted
+      if (assignment.element.querySelector(".task-add-btn") || assignment.isSubmitted) return
 
       const button = document.createElement("button")
       button.className = "task-add-btn btn btn-sm btn-info"
       button.style.marginLeft = "10px"
-      button.textContent = "タスクに追加"
-      button.onclick = () => addSingleTask(assignment)
+      button.style.fontSize = "12px"
+      button.textContent = "📋 タスクに追加"
+      button.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        addSingleTask(assignment)
+      }
 
       const titleContainer = assignment.element.querySelector(".cm-contentsList_contentName")
       if (titleContainer) {
+        titleContainer.style.display = "flex"
+        titleContainer.style.alignItems = "center"
         titleContainer.appendChild(button)
       }
     })

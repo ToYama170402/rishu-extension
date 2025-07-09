@@ -151,28 +151,33 @@ async function createTask({
   due = null,
   tasklistId = "@default"
 }) {
-  const accessToken = await getValidAccessToken()
-  const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(tasklistId)}/tasks`
-  const task = {
-    title,
-    notes,
-    ...(due ? { due } : {})
+  try {
+    const accessToken = await getValidAccessToken()
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(tasklistId)}/tasks`
+    const task = {
+      title,
+      notes,
+      ...(due ? { due } : {})
+    }
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(task)
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(
+        `タスクの追加中にエラーが発生しました。Status: ${response.status}, Error: ${JSON.stringify(err)}`
+      )
+    }
+    return await response.json()
+  } catch (error) {
+    console.error("Error creating task:", error)
+    throw error
   }
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(task)
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(
-      "タスクの追加中にエラーが発生しました。" + JSON.stringify(err)
-    )
-  }
-  return await response.json()
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
