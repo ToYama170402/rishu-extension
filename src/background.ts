@@ -9,7 +9,7 @@ if (!CLIENT_ID) {
     "OAuth Client ID is not set. Please check your environment variables."
   )
 }
-const SCOPE = "https://www.googleapis.com/auth/calendar"
+const SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks"
 const REDIRECT_URI = `https://${chrome.runtime.id}.chromiumapp.org/`
 
 async function authenticateAndGetToken() {
@@ -125,6 +125,56 @@ async function createCalendarEvent({
   return await response.json()
 }
 
+async function getTasksList() {
+  const accessToken = await getValidAccessToken()
+  const url = "https://tasks.googleapis.com/tasks/v1/users/@me/lists"
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    }
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(
+      "タスクリスト一覧の取得中にエラーが発生しました。" + JSON.stringify(err)
+    )
+  }
+  const data = await response.json()
+  return data.items
+}
+
+async function createTask({
+  title,
+  notes = "",
+  due = null,
+  tasklistId = "@default"
+}) {
+  const accessToken = await getValidAccessToken()
+  const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(tasklistId)}/tasks`
+  const task = {
+    title,
+    notes,
+    ...(due ? { due } : {})
+  }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(task)
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(
+      "タスクの追加中にエラーが発生しました。" + JSON.stringify(err)
+    )
+  }
+  return await response.json()
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_CALENDAR_LIST") {
     getCalendarList()
@@ -134,6 +184,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type === "CREATE_CALENDAR_EVENT") {
     createCalendarEvent(message.event)
+      .then((result) => sendResponse({ success: true, result }))
+      .catch((err) => sendResponse({ success: false, error: err.message }))
+    return true
+  }
+  if (message.type === "GET_TASKS_LIST") {
+    getTasksList()
+      .then((items) => sendResponse({ success: true, items }))
+      .catch((err) => sendResponse({ success: false, error: err.message }))
+    return true
+  }
+  if (message.type === "CREATE_TASK") {
+    createTask(message.task)
       .then((result) => sendResponse({ success: true, result }))
       .catch((err) => sendResponse({ success: false, error: err.message }))
     return true

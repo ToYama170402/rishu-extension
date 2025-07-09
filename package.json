@@ -19,6 +19,7 @@
     "plasmo": "0.89.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "sharp": "^0.34.2",
     "tailwindcss-radix": "^3.0.5"
   },
   "devDependencies": {
@@ -54,7 +55,8 @@
     "oauth2": {
       "client_id": "$PLASMO_PUBLIC_OAUTH_CLIENT_ID",
       "scopes": [
-        "https://www.googleapis.com/auth/calendar"
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/tasks"
       ]
     }
   }
