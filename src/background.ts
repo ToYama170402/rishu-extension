@@ -125,6 +125,35 @@ async function createCalendarEvent({
   return await response.json()
 }
 
+// 祝日取得関数
+async function getHolidays(timeMin, timeMax) {
+  const accessToken = await getValidAccessToken()
+  // 日本の祝日カレンダーID
+  const holidayCalendarId = "ja.japanese#holiday@group.v.calendar.google.com"
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
+  
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    }
+  })
+  
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(
+      "祝日の取得中にエラーが発生しました。" + JSON.stringify(err)
+    )
+  }
+  
+  const data = await response.json()
+  return data.items?.map(item => ({
+    date: item.start.date, // YYYY-MM-DD format
+    summary: item.summary
+  })) || []
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_CALENDAR_LIST") {
     getCalendarList()
@@ -135,6 +164,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "CREATE_CALENDAR_EVENT") {
     createCalendarEvent(message.event)
       .then((result) => sendResponse({ success: true, result }))
+      .catch((err) => sendResponse({ success: false, error: err.message }))
+    return true
+  }
+  if (message.type === "GET_HOLIDAYS") {
+    getHolidays(message.timeMin, message.timeMax)
+      .then((holidays) => sendResponse({ success: true, holidays }))
       .catch((err) => sendResponse({ success: false, error: err.message }))
     return true
   }
