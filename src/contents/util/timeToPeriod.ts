@@ -23,7 +23,10 @@ export default (time: Date): number => {
     case time >= new Date(day.setHours(19, 50, 0)) &&
       time <= new Date(day.setHours(21, 19, 0)):
       return 7
+    case time >= new Date(day.setHours(21, 20, 0)) &&
+      time <= new Date(day.setHours(22, 44, 0)):
+      return 8
     default:
-      return 0
+      throw new Error("Invalid time for period conversion")
   }
 }

@@ -12,6 +12,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.1.14",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-tabs": "^1.1.2",
     "plasmo": "0.89.4",
     "react": "18.2.0",
@@ -26,15 +29,33 @@
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
     "autoprefixer": "^10.4.20",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "https-browserify": "^1.0.0",
     "jest": "^29.7.0",
+    "path-browserify": "^1.0.1",
     "postcss": "^8.4.49",
     "prettier": "3.2.4",
     "prettier-plugin-tailwindcss": "^0.6.9",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
     "tailwindcss": "^3.4.16",
     "ts-jest": "^29.2.5",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "url": "^0.11.4",
+    "util": "^0.12.5"
   },
   "manifest": {
-    "permissions": []
+    "permissions": [
+      "storage",
+      "identity"
+    ],
+    "key": "$CRX_PUBLIC_KEY",
+    "oauth2": {
+      "client_id": "$PLASMO_PUBLIC_OAUTH_CLIENT_ID",
+      "scopes": [
+        "https://www.googleapis.com/auth/calendar"
+      ]
+    }
   }
 }
