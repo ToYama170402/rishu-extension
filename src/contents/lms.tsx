@@ -114,7 +114,7 @@ export default () => {
     (course) => course.datePeriod.period > 5
   )
   return (
-    <div className="bg-white-dark w-full p-7">
+    <div className="w-full bg-white-dark p-7">
       <Tabs.Root
         defaultValue={uniqueYears[0].toString()}
         className="flex w-full flex-col-reverse">
@@ -122,7 +122,7 @@ export default () => {
           {uniqueYears.map((year) => (
             <Tabs.Trigger
               value={year.toString()}
-              className="radix-state-active:bg-white radix-state-active:border-t-acanthus bg-white-dark radix-state-active:shadow-lg mr-2 mt-1 block rounded border-solid p-1 leading-none"
+              className="mr-2 mt-1 block rounded border-solid bg-white-dark p-1 leading-none radix-state-active:border-t-acanthus radix-state-active:bg-white radix-state-active:shadow-lg"
               key={year}
               defaultValue={uniqueYears.at(-1).toString()}>
               {year}
@@ -144,7 +144,7 @@ export default () => {
                 {uniqueQuoters.map((quoter) => (
                   <Tabs.Trigger
                     value={quoter.toString()}
-                    className="radix-state-active:border-b-2 radix-state-active:border-acanthus mr-2 block leading-none transition hover:border-b-2 hover:border-acanthus"
+                    className="mr-2 block leading-none transition hover:border-b-2 hover:border-acanthus radix-state-active:border-b-2 radix-state-active:border-acanthus"
                     key={quoter}
                     onClick={() =>
                       localStorage.setItem(
@@ -156,7 +156,7 @@ export default () => {
                   </Tabs.Trigger>
                 ))}
                 <button
-                  className="text-white mb-2 ml-auto mr-0 block rounded bg-acanthus p-1 px-3 text-xs font-bold transition hover:bg-opacity-60"
+                  className="mb-2 ml-auto mr-0 block rounded bg-acanthus p-1 px-3 text-xs font-bold text-white transition hover:bg-opacity-60"
                   onClick={() => setIsDisplayWeekend(!isDisplayWeekend)}>
                   {isDisplayWeekend ? "土日非表示" : "土日表示"}
                 </button>

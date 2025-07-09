@@ -131,7 +131,7 @@ async function getHolidays(timeMin, timeMax) {
   // 日本の祝日カレンダーID
   const holidayCalendarId = "ja.japanese#holiday@group.v.calendar.google.com"
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
-  
+
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -139,19 +139,21 @@ async function getHolidays(timeMin, timeMax) {
       "Content-Type": "application/json"
     }
   })
-  
+
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
     throw new Error(
       "祝日の取得中にエラーが発生しました。" + JSON.stringify(err)
     )
   }
-  
+
   const data = await response.json()
-  return data.items?.map(item => ({
-    date: item.start.date, // YYYY-MM-DD format
-    summary: item.summary
-  })) || []
+  return (
+    data.items?.map((item) => ({
+      date: item.start.date, // YYYY-MM-DD format
+      summary: item.summary
+    })) || []
+  )
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
