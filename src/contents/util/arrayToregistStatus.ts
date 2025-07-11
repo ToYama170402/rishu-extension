@@ -43,5 +43,9 @@ export default function arrayToRegistStatus(
       }
       return course
     })
+  } else {
+    throw new Error(
+      `Invalid input row length: ${registStatusArray[0].length}. Expected 9 or 14.`
+    );
   }
 }
