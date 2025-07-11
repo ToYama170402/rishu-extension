@@ -9,7 +9,6 @@ export const config: PlasmoCSConfig = {
     "https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistEdit.aspx"
   ]
 }
-export default {}
 window.addEventListener("load", async () => {
   const registrationStatusAnchor = document.getElementById(
     "ctl00_phContents_ucRegistEdit_lnkrationStatus"
