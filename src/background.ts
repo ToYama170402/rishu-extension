@@ -183,33 +183,78 @@ async function deleteEventInstance(calendarId, eventId, instanceDate) {
 
 // 祝日取得関数
 async function getHolidays(timeMin, timeMax) {
-  const accessToken = await getValidAccessToken()
-  // 日本の祝日カレンダーID
-  const holidayCalendarId = "ja.japanese#holiday@group.v.calendar.google.com"
-  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    }
-  })
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(
-      "祝日の取得中にエラーが発生しました。" + JSON.stringify(err)
+  try {
+    const accessToken = await getValidAccessToken()
+    // 日本の祝日カレンダーID
+    const holidayCalendarId = "ja.japanese#holiday@group.v.calendar.google.com"
+    
+    // まず、カレンダーリストに祝日カレンダーがあるかチェック
+    const calendarListResponse = await fetch(
+      "https://www.googleapis.com/calendar/v3/users/me/calendarList", 
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        }
+      }
     )
-  }
+    
+    if (calendarListResponse.ok) {
+      const calendarListData = await calendarListResponse.json()
+      const hasHolidayCalendar = calendarListData.items?.some(
+        (cal) => cal.id === holidayCalendarId
+      )
+      
+      // 祝日カレンダーがカレンダーリストにない場合は追加を試行
+      if (!hasHolidayCalendar) {
+        try {
+          await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              id: holidayCalendarId
+            })
+          })
+        } catch (addError) {
+          // カレンダー追加に失敗した場合は継続（祝日なしで処理）
+          console.warn("祝日カレンダーの追加に失敗しました:", addError)
+        }
+      }
+    }
+    
+    // 祝日イベントを取得
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
+    
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    })
 
-  const data = await response.json()
-  return (
-    data.items?.map((item) => ({
-      date: item.start.date, // YYYY-MM-DD format
-      summary: item.summary
-    })) || []
-  )
+    if (!response.ok) {
+      // 祝日カレンダーにアクセスできない場合は空の配列を返す（エラーを投げない）
+      console.warn("祝日カレンダーへのアクセスに失敗しました。祝日なしで処理を続行します。")
+      return []
+    }
+
+    const data = await response.json()
+    return (
+      data.items?.map((item) => ({
+        date: item.start.date, // YYYY-MM-DD format
+        summary: item.summary
+      })) || []
+    )
+  } catch (error) {
+    // 祝日取得でエラーが発生した場合は空の配列を返す（処理を継続）
+    console.warn("祝日の取得中にエラーが発生しました。祝日なしで処理を続行します:", error)
+    return []
+  }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
