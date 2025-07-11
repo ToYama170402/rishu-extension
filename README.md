@@ -1,33 +1,36 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+# rishu-extension
 
-## Getting Started
+rishu-extensionは、金沢大学の学内システムの使い勝手を向上させるためのブラウザ拡張機能です。
 
-First, run the development server:
+## 機能概要
 
-```bash
-pnpm dev
-# or
-npm run dev
-```
+- LMSの講義一覧のUIを改善
+- 履修時間割表からGoogleカレンダーに講義を追加
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+## セットアップ
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
+1. レポジトリをクローン：`git clone https://github.com/ToYama170402/rishu-extension.git`
+2. 依存関係のインストール：`pnpm install`
+3. 開発用サーバーの起動：`pnpm dev`
 
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
+開発用ビルドが`build/chrome-mv3-dev`等に出力されます。Chromeの拡張機能管理画面から「パッケージ化されていない拡張機能を読み込む」で該当ディレクトリを選択してください。
 
-## Making production build
-
-Run the following:
+## 本番ビルド
 
 ```bash
 pnpm build
-# or
-npm run build
 ```
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+`build/`ディレクトリに本番用バンドルが生成されます。
 
-## Submit to the webstores
+## デプロイ・ストアへの公開
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+`.github/workflows/submit.yml`を実行します。
+
+## 参考リンク
+
+- [Plasmo公式ドキュメント](https://docs.plasmo.com/)
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
