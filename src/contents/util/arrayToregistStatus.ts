@@ -2,10 +2,13 @@ import { adjustRegistStatus, registStatus } from "@contents/type/registStatus"
 
 import parseDayPeriod from "./parseDayPeriod"
 
+const FULL_REGIST_STATUS_LENGTH = 14;
+const ADJUST_REGIST_STATUS_LENGTH = 9;
+
 export default function arrayToRegistStatus(
   registStatusArray: string[][]
 ): registStatus[] | adjustRegistStatus[] {
-  if (registStatusArray[0].length === 14) {
+  if (registStatusArray[0].length === FULL_REGIST_STATUS_LENGTH) {
     return registStatusArray.map((registStatus) => {
       const course: registStatus = {
         course: {
