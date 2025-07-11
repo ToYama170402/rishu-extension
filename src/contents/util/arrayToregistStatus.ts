@@ -1,4 +1,3 @@
-import { parse } from "path"
 import { adjustRegistStatus, registStatus } from "@contents/type/registStatus"
 
 import parseDayPeriod from "./parseDayPeriod"
