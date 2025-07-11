@@ -369,13 +369,13 @@ export default function CourseList() {
     return dayConversion[jpDay] || jpDay
   }, [])
 
-  // カレンダーイベント作成（改良版：祝日除外・時間割変更対応）
+  // カレンダーイベント作成（RRULE版：祝日除外・時間割変更対応）
   const createCalendarEvent = useCallback(
     async (course: CourseInfo) => {
       const { startTime, endTime } = periodToTime(course.period)
       const location = course.syllabus?.room || ""
 
-      // 開始日から終了日までの期間で、該当する曜日の日付を取得
+      // 最初の授業日を見つける
       const startDate = new Date(repeatStart)
       const endDate = new Date(repeatEnd)
       const targetDayNum = {
@@ -387,9 +387,65 @@ export default function CourseList() {
         Sat: 6,
         Sun: 0
       }[course.day]
-      const events = []
 
-      // 指定期間内の該当曜日の全日付を取得
+      // 最初の該当曜日を見つける
+      let firstOccurrence = new Date(startDate)
+      while (firstOccurrence.getDay() !== targetDayNum) {
+        firstOccurrence.setDate(firstOccurrence.getDate() + 1)
+      }
+
+      // RRULE用の曜日コード
+      const dayCode = {
+        0: "SU", // Sunday
+        1: "MO", // Monday
+        2: "TU", // Tuesday
+        3: "WE", // Wednesday
+        4: "TH", // Thursday
+        5: "FR", // Friday
+        6: "SA"  // Saturday
+      }[targetDayNum]
+
+      // RRULEで繰り返しイベントを作成
+      const startTimeStr = startTime.toTimeString().slice(0, 8)
+      const endTimeStr = endTime.toTimeString().slice(0, 8)
+      const firstOccurrenceStr = firstOccurrence.toISOString().slice(0, 10)
+      const startDateTime = `${firstOccurrenceStr}T${startTimeStr}+09:00`
+      const endDateTime = `${firstOccurrenceStr}T${endTimeStr}+09:00`
+      const untilDate = endDate.toISOString().slice(0, 10).replace(/-/g, "")
+
+      const rrule = `RRULE:FREQ=WEEKLY;BYDAY=${dayCode};UNTIL=${untilDate}T235959Z`
+
+      // 繰り返しイベントを作成
+      const recurringEventResponse = await new Promise<any>((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            type: "CREATE_CALENDAR_EVENT",
+            event: {
+              summary: `${course.courseName}`,
+              description: formatEventDetails(course),
+              startDateTime,
+              endDateTime,
+              timeZone: "Asia/Tokyo",
+              recurrence: [rrule],
+              calendarId,
+              location
+            }
+          },
+          (res) => resolve(res)
+        )
+      })
+
+      if (!recurringEventResponse.success) {
+        throw new Error("繰り返しイベントの作成に失敗しました")
+      }
+
+      const recurringEventId = recurringEventResponse.result.id
+
+      // 祝日と時間割変更日のリストを作成
+      const datesToDelete = []
+      const scheduleChangesToAdd = []
+
+      // 指定期間内の該当曜日の全日付を確認（元の授業日をチェック）
       for (
         let d = new Date(startDate);
         d <= endDate;
@@ -398,19 +454,36 @@ export default function CourseList() {
         const currentDay = d.getDay()
         const dateStr = d.toISOString().slice(0, 10)
 
+        // 該当曜日でない場合はスキップ
+        if (currentDay !== targetDayNum) {
+          continue
+        }
+
         // 祝日チェック
         if (isHoliday(dateStr)) {
-          continue // 祝日はスキップ
+          datesToDelete.push(dateStr)
+          continue
         }
 
         // 時間割変更チェック
         const scheduleChange = getScheduleChangeForDate(dateStr)
-        let shouldCreateEvent = false
-
         if (scheduleChange) {
-          // 時間割変更がある場合
-          // 元の曜日（course.day）を変更先の曜日（scheduleChange.toDay）として扱う
-          const courseEnglishDay = course.day // Mon, Tue, Wed, etc.
+          datesToDelete.push(dateStr)
+        }
+      }
+
+      // 時間割変更日の個別イベントを探す（変更先が元の曜日と一致する場合）
+      for (
+        let d = new Date(startDate);
+        d <= endDate;
+        d.setDate(d.getDate() + 1)
+      ) {
+        const dateStr = d.toISOString().slice(0, 10)
+        const scheduleChange = getScheduleChangeForDate(dateStr)
+        
+        if (scheduleChange) {
+          // 変更先の曜日と現在の授業の曜日が一致する場合、個別イベントを作成
+          const courseEnglishDay = course.day
           const courseDayNum = {
             Mon: 1,
             Tue: 2,
@@ -429,35 +502,50 @@ export default function CourseList() {
             土: 6,
             日: 0
           }[scheduleChange.toDay]
-          shouldCreateEvent = changeToDayNum === courseDayNum
-        } else {
-          // 通常の曜日チェック
-          shouldCreateEvent = currentDay === targetDayNum
-        }
-
-        if (shouldCreateEvent) {
-          const startTimeStr = startTime.toTimeString().slice(0, 8)
-          const endTimeStr = endTime.toTimeString().slice(0, 8)
-          const startDateTime = `${dateStr}T${startTimeStr}+09:00`
-          const endDateTime = `${dateStr}T${endTimeStr}+09:00`
-
-          events.push({
-            summary: `${course.courseName}`,
-            description: formatEventDetails(course),
-            startDateTime,
-            endDateTime,
-            timeZone: "Asia/Tokyo",
-            calendarId,
-            location
-          })
+          
+          if (changeToDayNum === courseDayNum) {
+            scheduleChangesToAdd.push({
+              date: dateStr,
+              course,
+              scheduleChange
+            })
+          }
         }
       }
 
-      // 各イベントを個別に作成
-      for (const event of events) {
+      // 祝日と時間割変更日の個別インスタンスを削除
+      for (const dateToDelete of datesToDelete) {
         await new Promise<void>((resolve) => {
           chrome.runtime.sendMessage(
-            { type: "CREATE_CALENDAR_EVENT", event },
+            {
+              type: "DELETE_EVENT_INSTANCE",
+              calendarId,
+              eventId: recurringEventId,
+              instanceDate: dateToDelete
+            },
+            (res) => resolve()
+          )
+        })
+        // API制限対策で少し待機
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+
+      // 時間割変更日の個別イベントを作成
+      for (const change of scheduleChangesToAdd) {
+        await new Promise<void>((resolve) => {
+          chrome.runtime.sendMessage(
+            {
+              type: "CREATE_CALENDAR_EVENT",
+              event: {
+                summary: `${change.course.courseName} (${change.scheduleChange.description || "時間割変更"})`,
+                description: formatEventDetails(change.course) + `\n\n時間割変更: ${change.scheduleChange.description || ""}`,
+                startDateTime: `${change.date}T${startTimeStr}+09:00`,
+                endDateTime: `${change.date}T${endTimeStr}+09:00`,
+                timeZone: "Asia/Tokyo",
+                calendarId,
+                location
+              }
+            },
             (res) => resolve()
           )
         })
