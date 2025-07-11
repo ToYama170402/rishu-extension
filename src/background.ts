@@ -227,8 +227,8 @@ async function getHolidays(timeMin, timeMax) {
     }
     
     // 祝日イベントを取得
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
-    
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
