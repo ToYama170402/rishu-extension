@@ -10,16 +10,17 @@ export const config: PlasmoCSConfig = {
   ]
 }
 window.addEventListener("load", async () => {
+  // 履修登録状況のリンクを取得
   const registrationStatusAnchor = document.getElementById(
     "ctl00_phContents_ucRegistEdit_lnkrationStatus"
   ) as HTMLAnchorElement
 
-  const iframe = document.createElement("iframe")
-  iframe.src = registrationStatusAnchor.href
-  iframe.id = "registration-status-iframe"
-  iframe.style.display = "none"
+  const courseRegistStatusPageIframe = document.createElement("iframe")
+  courseRegistStatusPageIframe.src = registrationStatusAnchor.href
+  courseRegistStatusPageIframe.id = "registration-status-iframe"
+  courseRegistStatusPageIframe.style.display = "none"
 
-  document.body.appendChild(iframe)
+  document.body.appendChild(courseRegistStatusPageIframe)
 
   let isFirstLoad = true
 
@@ -28,7 +29,7 @@ window.addEventListener("load", async () => {
       iframe.onload = () => resolve()
     })
 
-  await waitForIframeLoad(iframe)
+  await waitForIframeLoad(courseRegistStatusPageIframe)
 
   if (isFirstLoad) {
     isFirstLoad = false
@@ -38,49 +39,57 @@ window.addEventListener("load", async () => {
       cancelable: true
     })
 
-    const select = iframe.contentWindow.document.getElementById(
-      "ctl00_phContents_ucRegistrationStatus_ddlLns_ddl"
-    ) as HTMLSelectElement
-    select.value = "0"
-    select.dispatchEvent(event)
+    // 履修登録状況ページの表示件数を選択する要素を取得
+    const courseRegistItemPerPageDropdown =
+      courseRegistStatusPageIframe.contentWindow.document.getElementById(
+        "ctl00_phContents_ucRegistrationStatus_ddlLns_ddl"
+      ) as HTMLSelectElement
 
-    await waitForIframeLoad(iframe)
+    // 1ページあたりの表示件数を全件に設定
+    courseRegistItemPerPageDropdown.value = "0"
+    // ページ側のイベントハンドラーを動作させるために必要
+    courseRegistItemPerPageDropdown.dispatchEvent(event)
+
+    await waitForIframeLoad(courseRegistStatusPageIframe)
   }
-  const table = iframe.contentWindow.document.getElementById(
-    "ctl00_phContents_ucRegistrationStatus_gv"
-  )
+  // 履修登録状況のtable要素を取得
+  const registrationStatusTable =
+    courseRegistStatusPageIframe.contentWindow.document.getElementById(
+      "ctl00_phContents_ucRegistrationStatus_gv"
+    )
   const registrationStatus = arrayToRegistStatus(
-    Array.from(table.querySelectorAll("tr"))
+    Array.from(registrationStatusTable.querySelectorAll("tr"))
       .map((e) =>
         Array.from(e.querySelectorAll("td")).map((f) =>
           f.innerText.replace(/(\s{2,}|　)/g, "")
         )
       )
-      .slice(1)
+      .slice(1) // ヘッダー行を除外
   )
 
-  const timetableCells = Array.from(
-    document.querySelectorAll(".regist_blank_column")
-  ).filter((e) => e.getElementsByTagName("div").length > 1)
+  const timetableCellsHasCourse = Array.from(
+    document.querySelectorAll(".regist_blank_column") // 履修登録の各時間割セルを取得
+  ).filter((e) => e.getElementsByTagName("div").length > 1) // 講義が登録されているセルのみを対象
 
-  const registeredCourseElements: registeredCourseElement[] = timetableCells
-    .map((timetableCell) =>
-      Array.from(timetableCell.getElementsByTagName("div"))
-        .filter((div) => div.parentElement === timetableCell)
-        .slice(0, -1)
-        .map((div, i) => {
-          return {
-            element: div,
-            priority: (i + 1) as 1 | 2 | 3 | 4 | 5,
-            status: registrationStatus.find(
-              (status) =>
-                status.course.courseNumber ===
-                div.getElementsByTagName("a")[0].innerText
-            )
-          }
-        })
-    )
-    .flat()
+  const registeredCourseElements: registeredCourseElement[] =
+    timetableCellsHasCourse
+      .map((timetableCell) =>
+        Array.from(timetableCell.getElementsByTagName("div"))
+          .filter((div) => div.parentElement === timetableCell)
+          .slice(0, -1)
+          .map((div, i) => {
+            return {
+              element: div,
+              priority: (i + 1) as 1 | 2 | 3 | 4 | 5,
+              status: registrationStatus.find(
+                (status) =>
+                  status.course.courseNumber ===
+                  div.getElementsByTagName("a")[0].innerText
+              )
+            }
+          })
+      )
+      .flat()
 
   registeredCourseElements.forEach((registeredCourseElement) => {
     const { element, priority, status } = registeredCourseElement
@@ -91,7 +100,7 @@ window.addEventListener("load", async () => {
       const ratio =
         isPrimary && priority === 1
           ? applicantsRatio[0]
-          : applicantsRatio[priority]
+          : applicantsRatio[priority] // priorityは1スタート
       registStatus.innerText = Math.round(ratio * 100) + "%"
       element.querySelector("div").appendChild(registStatus)
     }
