@@ -238,9 +238,10 @@ async function getHolidays(timeMin, timeMax) {
     })
 
     if (!response.ok) {
-      // 祝日カレンダーにアクセスできない場合は空の配列を返す（エラーを投げない）
-      console.warn("祝日カレンダーへのアクセスに失敗しました。祝日なしで処理を続行します。")
-      return []
+      const err = await response.json().catch(() => ({}))
+      throw new Error(
+        "祝日の取得中にエラーが発生しました。" + JSON.stringify(err)
+      )
     }
 
     const data = await response.json()
@@ -251,9 +252,7 @@ async function getHolidays(timeMin, timeMax) {
       })) || []
     )
   } catch (error) {
-    // 祝日取得でエラーが発生した場合は空の配列を返す（処理を継続）
-    console.warn("祝日の取得中にエラーが発生しました。祝日なしで処理を続行します:", error)
-    return []
+    throw new Error("祝日の取得中にエラーが発生しました: " + error.message)
   }
 }
 
