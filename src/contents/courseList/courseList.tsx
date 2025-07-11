@@ -12,8 +12,8 @@ import cssText from "data-text:@/style.css"
 import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
 import React, { useCallback, useMemo, useState } from "react"
 
-import { parseSyllabus } from "./util/parseSyllabus"
-import periodToTime from "./util/periodToTime"
+import { parseSyllabus } from "../util/parseSyllabus"
+import periodToTime from "../util/periodToTime"
 
 // 型定義
 export type SyllabusInfo = ReturnType<typeof parseSyllabus>
@@ -402,7 +402,7 @@ export default function CourseList() {
         3: "WE", // Wednesday
         4: "TH", // Thursday
         5: "FR", // Friday
-        6: "SA"  // Saturday
+        6: "SA" // Saturday
       }[targetDayNum]
 
       // RRULEで繰り返しイベントを作成
@@ -442,7 +442,7 @@ export default function CourseList() {
       const recurringEventId = recurringEventResponse.result.id
 
       // 祝日と時間割変更日のリストを作成
-      const datesToDelete = []
+      const datesToDelete: string[] = []
       const scheduleChangesToAdd = []
 
       // 指定期間内の該当曜日の全日付を確認（元の授業日をチェック）
@@ -480,7 +480,7 @@ export default function CourseList() {
       ) {
         const dateStr = d.toISOString().slice(0, 10)
         const scheduleChange = getScheduleChangeForDate(dateStr)
-        
+
         if (scheduleChange) {
           // 変更先の曜日と現在の授業の曜日が一致する場合、個別イベントを作成
           const courseEnglishDay = course.day
@@ -502,7 +502,7 @@ export default function CourseList() {
             土: 6,
             日: 0
           }[scheduleChange.toDay]
-          
+
           if (changeToDayNum === courseDayNum) {
             scheduleChangesToAdd.push({
               date: dateStr,
@@ -538,7 +538,9 @@ export default function CourseList() {
               type: "CREATE_CALENDAR_EVENT",
               event: {
                 summary: `${change.course.courseName} (${change.scheduleChange.description || "時間割変更"})`,
-                description: formatEventDetails(change.course) + `\n\n時間割変更: ${change.scheduleChange.description || ""}`,
+                description:
+                  formatEventDetails(change.course) +
+                  `\n\n時間割変更: ${change.scheduleChange.description || ""}`,
                 startDateTime: `${change.date}T${startTimeStr}+09:00`,
                 endDateTime: `${change.date}T${endTimeStr}+09:00`,
                 timeZone: "Asia/Tokyo",
