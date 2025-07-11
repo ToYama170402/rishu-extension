@@ -137,6 +137,11 @@ async function getTasksList() {
   })
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
+    if (response.status === 403 && err.error?.message?.includes("Google Tasks API has not been used")) {
+      throw new Error(
+        "Google Tasks APIが有効化されていません。Google Cloud Consoleで「Google Tasks API」を有効化してください。詳細は docs/google-tasks-integration.md を参照してください。"
+      )
+    }
     throw new Error(
       "タスクリスト一覧の取得中にエラーが発生しました。" + JSON.stringify(err)
     )
@@ -169,6 +174,11 @@ async function createTask({
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
+      if (response.status === 403 && err.error?.message?.includes("Google Tasks API has not been used")) {
+        throw new Error(
+          "Google Tasks APIが有効化されていません。Google Cloud Consoleで「Google Tasks API」を有効化してください。詳細は docs/google-tasks-integration.md を参照してください。"
+        )
+      }
       throw new Error(
         `タスクの追加中にエラーが発生しました。Status: ${response.status}, Error: ${JSON.stringify(err)}`
       )

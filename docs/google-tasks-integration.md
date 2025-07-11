@@ -3,6 +3,35 @@
 ## 概要
 金沢大学のLMSのレポート課題をワンクリックでGoogleタスクに追加できる機能です。
 
+## ⚠️ 重要：セットアップ要件
+
+この機能を使用するには、Google Cloud Console でGoogle Tasks API を有効にする必要があります。
+
+### Google Cloud Console でのAPI有効化手順
+
+1. **Google Cloud Console にアクセス**
+   - [Google Cloud Console](https://console.cloud.google.com/)にログイン
+   - OAuth設定で使用しているプロジェクトを選択
+
+2. **Google Tasks API を有効化**
+   - 左側のメニューから「APIとサービス」→「ライブラリ」を選択
+   - 検索バーで「Google Tasks API」を検索
+   - 「Google Tasks API」をクリック
+   - 「有効にする」ボタンをクリック
+
+3. **確認**
+   - 「APIとサービス」→「有効なAPI」で「Google Tasks API」が一覧に表示されることを確認
+
+### よくあるエラーとその対処法
+
+**エラー例:**
+```
+Error: タスクの追加中にエラーが発生しました。Status: 403, Error: {"error":{"code":403,"message":"Google Tasks API has not been used in project [PROJECT_ID] before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/tasks.googleapis.com/overview?project=[PROJECT_ID] then retry..."}}
+```
+
+**対処法:**
+上記の手順でGoogle Tasks APIを有効化してください。API有効化後、数分待ってから再度お試しください。
+
 ## 機能詳細
 
 ### 対象ページ
