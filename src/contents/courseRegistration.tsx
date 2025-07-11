@@ -16,7 +16,7 @@ window.addEventListener("load", async () => {
 
   const iframe = document.createElement("iframe")
   iframe.src = registrationStatusAnchor.href
-  iframe.id = "test"
+  iframe.id = "registration-status-iframe"
   iframe.style.display = "none"
 
   document.body.appendChild(iframe)
