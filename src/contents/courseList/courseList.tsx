@@ -10,36 +10,30 @@ import * as Dialog from "@radix-ui/react-dialog"
 import * as Progress from "@radix-ui/react-progress"
 import cssText from "data-text:@/style.css"
 import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 
-import { parseSyllabus } from "../util/parseSyllabus"
-import periodToTime from "../util/periodToTime"
+import { fetchAndCreateEvents } from "./util/eventCreationUtils"
+import { fetchAndSetWritableCalendars } from "./util/googleApiUtils"
+import {
+  addScheduleChange as addScheduleChangeUtil,
+  removeScheduleChange as removeScheduleChangeUtil
+} from "./util/scheduleChangeUtils"
+import type {
+  CalendarItem,
+  CourseInfo,
+  Holiday,
+  ScheduleChange,
+  SyllabusInfo
+} from "./util/types"
 
-// 型定義
-export type SyllabusInfo = ReturnType<typeof parseSyllabus>
-export type CalendarItem = { id: string; summary: string; accessRole?: string }
-export type CourseInfo = {
-  day: string
-  period: number
-  syllabusLink: string
-  courseName: string
-  teacherName: string
-  syllabus?: SyllabusInfo | null
-}
-
-// 時間割変更関連の型定義
-export type ScheduleChange = {
-  id: string
-  date: string // YYYY-MM-DD format
-  fromDay: string // 元の曜日（月、火、水、木、金、土、日）
-  toDay: string // 変更先の曜日（月、火、水、木、金、土、日）
-  description?: string // 変更内容の説明
-}
-
-export type Holiday = {
-  date: string // YYYY-MM-DD format
-  summary: string
-}
+// 型定義を再エクスポート
+export type {
+  SyllabusInfo,
+  CalendarItem,
+  CourseInfo,
+  ScheduleChange,
+  Holiday
+} from "./util/types"
 
 export const config: PlasmoCSConfig = {
   matches: [
@@ -225,397 +219,52 @@ export default function CourseList() {
       .filter(Boolean) as CourseInfo[]
   }, [])
 
-  // 曜日→BYDAY変換
-  const getByDay = useCallback((day: string) => {
-    const dayMap = {
-      Mon: "MO",
-      Tue: "TU",
-      Wed: "WE",
-      Thu: "TH",
-      Fri: "FR",
-      Sat: "SA"
-    }
-    return dayMap[day] || ""
-  }, [])
-
-  // 曜日から最初の日付を取得
-  const getFirstDateOfWeekday = useCallback(
-    (startDateStr: string, weekdayStr: string) => {
-      const dayMapNum = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
-      const startDate = new Date(startDateStr)
-      const startDay = startDate.getDay() === 0 ? 7 : startDate.getDay()
-      const targetDay = dayMapNum[weekdayStr]
-      const diff = (targetDay - startDay + 7) % 7
-      const firstDate = new Date(startDate)
-      firstDate.setDate(startDate.getDate() + diff)
-      return firstDate.toISOString().slice(0, 10)
-    },
-    []
-  )
-
-  // イベント詳細生成
-  const formatEventDetails = useCallback((course: CourseInfo): string => {
-    let details = `担当教員: ${course.teacherName}\nシラバス: ${course.syllabusLink}`
-    if (course.syllabus) {
-      const s = course.syllabus
-      const shortInfo = [
-        s.subjectNumber && `科目ナンバー: ${s.subjectNumber}`,
-        s.credits && `単位数: ${s.credits}`,
-        s.lectureType && `講義形態: ${s.lectureType}`,
-        s.dayPeriod && `曜日・時限: ${s.dayPeriod}`,
-        s.term && `学期: ${s.term}`,
-        s.room && `講義室: ${s.room}`,
-        s.books &&
-          s.books.length > 0 &&
-          `教科書: ${s.books.map((b) => b.title).join(", ")}`
-      ]
-        .filter(Boolean)
-        .join("\n")
-      details += "\n" + shortInfo
-    }
-    return details
-  }, [])
-
-  // シラバス取得
-  const fetchAndParseSyllabus = useCallback(
-    async (course: CourseInfo): Promise<CourseInfo> => {
-      try {
-        const res = await fetch(course.syllabusLink)
-        const html = await res.text()
-        const syllabus = parseSyllabus(html)
-        return { ...course, syllabus }
-      } catch {
-        return { ...course, syllabus: null }
-      }
-    },
-    []
-  )
-
-  // カレンダーリスト取得
-  const fetchAndSetWritableCalendars = useCallback(() => {
-    chrome.runtime.sendMessage({ type: "GET_CALENDAR_LIST" }, (res) => {
-      if (res && res.success && res.items) {
-        const writable = res.items.filter(
-          (cal: CalendarItem) =>
-            cal.accessRole === "writer" || cal.accessRole === "owner"
-        )
-        setCalendarList(writable)
-        if (writable.length > 0) setCalendarId(writable[0].id)
-      }
-    })
-  }, [])
-
-  // 祝日取得
-  const fetchHolidays = useCallback((startDate: string, endDate: string) => {
-    const timeMin = `${startDate}T00:00:00+09:00`
-    const timeMax = `${endDate}T23:59:59+09:00`
-
-    chrome.runtime.sendMessage(
-      { type: "GET_HOLIDAYS", timeMin, timeMax },
-      (res) => {
-        if (res && res.success && res.holidays) {
-          setHolidays(res.holidays)
-        }
-      }
-    )
-  }, [])
-
   // 時間割変更管理関数
-  const addScheduleChange = useCallback(
-    (date: string, fromDay: string, toDay: string, description?: string) => {
-      const newChange: ScheduleChange = {
-        id: Date.now().toString(),
-        date,
-        fromDay,
-        toDay,
-        description
-      }
-      setScheduleChanges((prev) => [...prev, newChange])
-    },
-    []
-  )
-
-  const removeScheduleChange = useCallback((id: string) => {
-    setScheduleChanges((prev) => prev.filter((change) => change.id !== id))
-  }, [])
-
-  // 指定された日付が祝日かチェック
-  const isHoliday = useCallback(
-    (date: string): boolean => {
-      return holidays.some((holiday) => holiday.date === date)
-    },
-    [holidays]
-  )
-
-  // 指定された日付の時間割変更をチェック
-  const getScheduleChangeForDate = useCallback(
-    (date: string): ScheduleChange | null => {
-      return scheduleChanges.find((change) => change.date === date) || null
-    },
-    [scheduleChanges]
-  )
-
-  // 日本語曜日から英語曜日への変換
-  const convertJapaneseDayToEnglish = useCallback((jpDay: string): string => {
-    const dayConversion = {
-      月: "Mon",
-      火: "Tue",
-      水: "Wed",
-      木: "Thu",
-      金: "Fri",
-      土: "Sat",
-      日: "Sun"
-    }
-    return dayConversion[jpDay] || jpDay
-  }, [])
-
-  // カレンダーイベント作成（RRULE版：祝日除外・時間割変更対応）
-  const createCalendarEvent = useCallback(
-    async (course: CourseInfo) => {
-      const { startTime, endTime } = periodToTime(course.period)
-      const location = course.syllabus?.room || ""
-
-      // 最初の授業日を見つける
-      const startDate = new Date(repeatStart)
-      const endDate = new Date(repeatEnd)
-      const targetDayNum = {
-        Mon: 1,
-        Tue: 2,
-        Wed: 3,
-        Thu: 4,
-        Fri: 5,
-        Sat: 6,
-        Sun: 0
-      }[course.day]
-
-      // 最初の該当曜日を見つける
-      let firstOccurrence = new Date(startDate)
-      while (firstOccurrence.getDay() !== targetDayNum) {
-        firstOccurrence.setDate(firstOccurrence.getDate() + 1)
-      }
-
-      // RRULE用の曜日コード
-      const dayCode = {
-        0: "SU", // Sunday
-        1: "MO", // Monday
-        2: "TU", // Tuesday
-        3: "WE", // Wednesday
-        4: "TH", // Thursday
-        5: "FR", // Friday
-        6: "SA" // Saturday
-      }[targetDayNum]
-
-      // RRULEで繰り返しイベントを作成
-      const startTimeStr = startTime.toTimeString().slice(0, 8)
-      const endTimeStr = endTime.toTimeString().slice(0, 8)
-      const firstOccurrenceStr = firstOccurrence.toISOString().slice(0, 10)
-      const startDateTime = `${firstOccurrenceStr}T${startTimeStr}+09:00`
-      const endDateTime = `${firstOccurrenceStr}T${endTimeStr}+09:00`
-      const untilDate = endDate.toISOString().slice(0, 10).replace(/-/g, "")
-
-      const rrule = `RRULE:FREQ=WEEKLY;BYDAY=${dayCode};UNTIL=${untilDate}T235959Z`
-
-      // 繰り返しイベントを作成
-      const recurringEventResponse = await new Promise<any>((resolve) => {
-        chrome.runtime.sendMessage(
-          {
-            type: "CREATE_CALENDAR_EVENT",
-            event: {
-              summary: `${course.courseName}`,
-              description: formatEventDetails(course),
-              startDateTime,
-              endDateTime,
-              timeZone: "Asia/Tokyo",
-              recurrence: [rrule],
-              calendarId,
-              location
-            }
-          },
-          (res) => resolve(res)
-        )
-      })
-
-      if (!recurringEventResponse.success) {
-        throw new Error("繰り返しイベントの作成に失敗しました")
-      }
-
-      const recurringEventId = recurringEventResponse.result.id
-
-      // 祝日と時間割変更日のリストを作成
-      const datesToDelete: string[] = []
-      const scheduleChangesToAdd = []
-
-      // 指定期間内の該当曜日の全日付を確認（元の授業日をチェック）
-      for (
-        let d = new Date(startDate);
-        d <= endDate;
-        d.setDate(d.getDate() + 1)
-      ) {
-        const currentDay = d.getDay()
-        const dateStr = d.toISOString().slice(0, 10)
-
-        // 該当曜日でない場合はスキップ
-        if (currentDay !== targetDayNum) {
-          continue
-        }
-
-        // 祝日チェック
-        if (isHoliday(dateStr)) {
-          datesToDelete.push(dateStr)
-          continue
-        }
-
-        // 時間割変更チェック
-        const scheduleChange = getScheduleChangeForDate(dateStr)
-        if (scheduleChange) {
-          datesToDelete.push(dateStr)
-        }
-      }
-
-      // 時間割変更日の個別イベントを探す（変更先が元の曜日と一致する場合）
-      for (
-        let d = new Date(startDate);
-        d <= endDate;
-        d.setDate(d.getDate() + 1)
-      ) {
-        const dateStr = d.toISOString().slice(0, 10)
-        const scheduleChange = getScheduleChangeForDate(dateStr)
-
-        if (scheduleChange) {
-          // 変更先の曜日と現在の授業の曜日が一致する場合、個別イベントを作成
-          const courseEnglishDay = course.day
-          const courseDayNum = {
-            Mon: 1,
-            Tue: 2,
-            Wed: 3,
-            Thu: 4,
-            Fri: 5,
-            Sat: 6,
-            Sun: 0
-          }[courseEnglishDay]
-          const changeToDayNum = {
-            月: 1,
-            火: 2,
-            水: 3,
-            木: 4,
-            金: 5,
-            土: 6,
-            日: 0
-          }[scheduleChange.toDay]
-
-          if (changeToDayNum === courseDayNum) {
-            scheduleChangesToAdd.push({
-              date: dateStr,
-              course,
-              scheduleChange
-            })
-          }
-        }
-      }
-
-      // 祝日と時間割変更日の個別インスタンスを削除
-      for (const dateToDelete of datesToDelete) {
-        await new Promise<void>((resolve) => {
-          chrome.runtime.sendMessage(
-            {
-              type: "DELETE_EVENT_INSTANCE",
-              calendarId,
-              eventId: recurringEventId,
-              instanceDate: dateToDelete
-            },
-            (res) => resolve()
-          )
-        })
-        // API制限対策で少し待機
-        await new Promise((resolve) => setTimeout(resolve, 100))
-      }
-
-      // 時間割変更日の個別イベントを作成
-      for (const change of scheduleChangesToAdd) {
-        await new Promise<void>((resolve) => {
-          chrome.runtime.sendMessage(
-            {
-              type: "CREATE_CALENDAR_EVENT",
-              event: {
-                summary: `${change.course.courseName} (${change.scheduleChange.description || "時間割変更"})`,
-                description:
-                  formatEventDetails(change.course) +
-                  `\n\n時間割変更: ${change.scheduleChange.description || ""}`,
-                startDateTime: `${change.date}T${startTimeStr}+09:00`,
-                endDateTime: `${change.date}T${endTimeStr}+09:00`,
-                timeZone: "Asia/Tokyo",
-                calendarId,
-                location
-              }
-            },
-            (res) => resolve()
-          )
-        })
-        // API制限対策で少し待機
-        await new Promise((resolve) => setTimeout(resolve, 100))
-      }
-    },
-    [
-      calendarId,
-      formatEventDetails,
-      isHoliday,
-      getScheduleChangeForDate,
-      repeatEnd,
-      repeatStart
-    ]
-  )
-
-  // 遅延関数
-  // 指定ミリ秒後に解決するPromiseを返す
-  const delay = (ms: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+  const addScheduleChange = (
+    date: string,
+    fromDay: string,
+    toDay: string,
+    description?: string
+  ) => {
+    setScheduleChanges((prev) =>
+      addScheduleChangeUtil(prev, date, fromDay, toDay, description)
+    )
   }
 
-  // イベント一括追加
-  const fetchAndCreateEvents = useCallback(async () => {
+  const removeScheduleChange = (id: string) => {
+    setScheduleChanges((prev) => removeScheduleChangeUtil(prev, id))
+  }
+
+  // カレンダーリスト取得とセット
+  const handleFetchAndSetWritableCalendars = async () => {
+    const calendars = await fetchAndSetWritableCalendars()
+    setCalendarList(calendars)
+    if (calendars.length > 0) setCalendarId(calendars[0].id)
+  }
+
+  // イベント一括追加の処理
+  const handleFetchAndCreateEvents = async () => {
     setError(null)
     setProgress(0)
     setIsLoading(true)
     try {
-      if (!repeatStart || !repeatEnd || !calendarId) {
-        setError("カレンダー、開始日、終了日をすべて入力してください。")
-        setIsLoading(false)
-        return
-      }
-
-      // まず祝日情報を取得
-      await new Promise<void>((resolve) => {
-        fetchHolidays(repeatStart, repeatEnd)
-        // 祝日取得の完了を少し待つ
-        setTimeout(resolve, 1000)
-      })
-
-      const courseListWithSyllabus: CourseInfo[] = []
-      for (let i = 0; i < courseInfoList.length; i++) {
-        await delay(300 + Math.random() * 200)
-        courseListWithSyllabus.push(
-          await fetchAndParseSyllabus(courseInfoList[i])
-        )
-        setProgress(Math.round(((i + 1) / courseInfoList.length) * 100))
-      }
-      await Promise.all(
-        courseListWithSyllabus.map((course) => createCalendarEvent(course))
+      await fetchAndCreateEvents(
+        courseInfoList,
+        repeatStart,
+        repeatEnd,
+        calendarId,
+        scheduleChanges,
+        setProgress
       )
       setIsOpen(false)
       setProgress(0)
       setIsAlertOpen(true)
+    } catch (err) {
+      setError(err.message || "エラーが発生しました")
     } finally {
       setIsLoading(false)
     }
-  }, [
-    calendarId,
-    courseInfoList,
-    createCalendarEvent,
-    fetchAndParseSyllabus,
-    fetchHolidays,
-    repeatEnd,
-    repeatStart
-  ])
+  }
 
   return (
     <div className="w-full">
@@ -642,7 +291,7 @@ export default function CourseList() {
       <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
         <Dialog.Trigger asChild>
           <button
-            onClick={fetchAndSetWritableCalendars}
+            onClick={handleFetchAndSetWritableCalendars}
             className="ml-auto mr-1 block rounded border border-slate-500 bg-slate-100 p-1 transition hover:bg-slate-200">
             カレンダーに追加
           </button>
@@ -790,7 +439,7 @@ export default function CourseList() {
             </Dialog.Close>
             <button
               className="rounded-none border border-gray-400 bg-gray-300 px-3 py-1 text-gray-900 shadow-none hover:bg-gray-400 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-              onClick={fetchAndCreateEvents}
+              onClick={handleFetchAndCreateEvents}
               disabled={isLoading}>
               追加する
             </button>

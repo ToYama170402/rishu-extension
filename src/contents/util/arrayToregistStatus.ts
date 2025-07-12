@@ -2,8 +2,8 @@ import { adjustRegistStatus, registStatus } from "@contents/type/registStatus"
 
 import parseDayPeriod from "./parseDayPeriod"
 
-const FULL_REGIST_STATUS_LENGTH = 14;
-const ADJUST_REGIST_STATUS_LENGTH = 9;
+const FULL_REGIST_STATUS_LENGTH = 14
+const ADJUST_REGIST_STATUS_LENGTH = 9
 
 export default function arrayToRegistStatus(
   registStatusArray: string[][]
@@ -49,6 +49,6 @@ export default function arrayToRegistStatus(
   } else {
     throw new Error(
       `Invalid input row length: ${registStatusArray[0].length}. Expected 9 or 14.`
-    );
+    )
   }
 }
