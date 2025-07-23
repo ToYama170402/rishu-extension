@@ -9,10 +9,10 @@ export default ({ xFragment, children }: RenderColumnProps) => {
   return (
     <div
       className={
-        "border-gray-300 flex-1 border-r border-solid px-3 first:pl-0 last:border-r-0 last:pr-0"
+        "flex-1 border-r border-solid border-gray-300 px-3 first:pl-0 last:border-r-0 last:pr-0"
       }>
       <div
-        className={`mx-auto block size-6 text-center font-bold ${isDay ? "text-white rounded-full bg-acanthus" : ""}`}>
+        className={`mx-auto block size-6 text-center font-bold ${isDay ? "rounded-full bg-acanthus text-white" : ""}`}>
         {xFragment}
       </div>
       <div className="timetable-column-body">{children}</div>
